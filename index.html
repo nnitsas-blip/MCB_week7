@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 7 — Banking Regulation Quiz</title>
+<style>
+  :root {
+    --navy: #1E2761;
+    --navy-light: #2a3580;
+    --navy-dark: #141b47;
+    --gold: #C9A84C;
+    --gold-light: #e8c96a;
+    --ice: #CADCFC;
+    --ice-light: #e8f0fe;
+    --white: #FFFFFF;
+    --text: #1a1a2e;
+    --muted: #5a6488;
+    --correct: #1a7a4a;
+    --correct-bg: #e8f5ee;
+    --correct-border: #2ecc71;
+    --wrong: #b52a2a;
+    --wrong-bg: #fdeaea;
+    --wrong-border: #e74c3c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+    background: linear-gradient(135deg, #0f1535 0%, #1E2761 60%, #2a3580 100%);
+    min-height: 100vh;
+    padding: 30px 16px 60px;
+    color: var(--text);
+  }
+
+  .quiz-shell { max-width: 860px; margin: 0 auto; }
+
+  .header { text-align: center; margin-bottom: 36px; }
+  .header .tag {
+    display: inline-block;
+    background: var(--gold); color: var(--navy-dark);
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; padding: 4px 14px; border-radius: 20px; margin-bottom: 12px;
+  }
+  .header h1 { color: var(--white); font-size: 1.9rem; font-weight: 700; line-height: 1.2; margin-bottom: 6px; }
+  .header .subtitle { color: var(--ice); font-size: 0.92rem; opacity: 0.85; }
+
+  .progress-bar-wrap { background: rgba(255,255,255,0.12); border-radius: 8px; height: 8px; margin-bottom: 28px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 8px; transition: width 0.5s ease; width: 0%; }
+  .progress-label { display: flex; justify-content: space-between; color: var(--ice); font-size: 0.78rem; margin-bottom: 8px; opacity: 0.8; }
+
+  .question-card {
+    background: var(--white); border-radius: 14px; padding: 28px 32px;
+    margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    border-left: 5px solid var(--navy); display: none; animation: fadeIn 0.35s ease;
+  }
+  .question-card.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+  .q-number {
+    background: var(--navy); color: var(--gold);
+    font-size: 0.82rem; font-weight: 700; padding: 4px 12px;
+    border-radius: 20px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.5px;
+  }
+
+  .scenario-box {
+    background: var(--ice-light); border-left: 4px solid var(--navy);
+    border-radius: 6px; padding: 14px 18px; margin-bottom: 18px;
+    font-size: 0.91rem; line-height: 1.65; color: #1a2040;
+  }
+  .scenario-box strong { color: var(--navy); }
+
+  .pca-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.78rem; }
+  .pca-table th {
+    background: var(--navy); color: var(--gold);
+    padding: 5px 8px; text-align: left; font-weight: 700; letter-spacing: 0.3px;
+  }
+  .pca-table td { padding: 5px 8px; border-bottom: 1px solid #d0daf5; vertical-align: top; line-height: 1.4; }
+  .pca-table tr:nth-child(even) td { background: #f0f4ff; }
+  .pca-table tr:last-child td { border-bottom: none; }
+  .pca-table .zone { font-weight: 700; color: var(--navy); white-space: nowrap; }
+
+  .q-text { font-size: 1.0rem; font-weight: 600; color: var(--navy-dark); line-height: 1.55; margin-bottom: 20px; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option-btn {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: #f7f9ff; border: 2px solid #dce4f5; border-radius: 10px;
+    padding: 12px 16px; cursor: pointer; text-align: left;
+    font-size: 0.91rem; color: var(--text); line-height: 1.5;
+    transition: all 0.2s ease; font-family: inherit; width: 100%;
+  }
+  .option-btn:hover:not(:disabled) { border-color: var(--navy); background: var(--ice-light); transform: translateX(3px); }
+  .option-btn .opt-label {
+    background: var(--navy); color: var(--white); font-weight: 700;
+    font-size: 0.78rem; padding: 2px 8px; border-radius: 4px;
+    flex-shrink: 0; margin-top: 2px; line-height: 1.6;
+  }
+  .option-btn .opt-text { flex: 1; }
+  .option-btn.correct { border-color: var(--correct-border); background: var(--correct-bg); color: var(--correct); }
+  .option-btn.correct .opt-label { background: var(--correct); }
+  .option-btn.wrong { border-color: var(--wrong-border); background: var(--wrong-bg); color: var(--wrong); }
+  .option-btn.wrong .opt-label { background: var(--wrong); }
+  .option-btn:disabled { cursor: default; transform: none; }
+
+  .explanation { display: none; margin-top: 18px; border-radius: 10px; overflow: hidden; border: 1.5px solid #d0daf5; animation: fadeIn 0.3s ease; }
+  .explanation.show { display: block; }
+  .explanation-header { padding: 10px 18px; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; }
+  .explanation.correct-exp .explanation-header { background: var(--correct); color: white; }
+  .explanation.wrong-exp .explanation-header { background: var(--wrong); color: white; }
+  .explanation-body { padding: 14px 18px; font-size: 0.89rem; line-height: 1.65; color: #1a2040; background: white; }
+  .explanation-body strong { color: var(--navy); }
+  .explanation-body .key-concept {
+    background: var(--ice-light); border-left: 3px solid var(--gold);
+    padding: 8px 12px; margin-top: 10px; border-radius: 4px; font-size: 0.86rem;
+  }
+
+  .nav-row { display: flex; justify-content: flex-end; margin-top: 22px; }
+  .btn-next {
+    background: var(--navy); color: var(--gold); border: none; border-radius: 8px;
+    padding: 10px 28px; font-size: 0.92rem; font-weight: 700; cursor: pointer;
+    letter-spacing: 0.5px; transition: background 0.2s, transform 0.15s; display: none;
+  }
+  .btn-next:hover { background: var(--navy-light); transform: translateY(-1px); }
+  .btn-next.visible { display: block; }
+
+  .results-card {
+    background: var(--white); border-radius: 14px; padding: 40px 36px;
+    text-align: center; display: none; box-shadow: 0 8px 40px rgba(0,0,0,0.25); animation: fadeIn 0.4s ease;
+  }
+  .results-card.show { display: block; }
+  .results-card h2 { color: var(--navy); font-size: 1.7rem; margin-bottom: 8px; }
+  .score-ring {
+    width: 140px; height: 140px; border-radius: 50%;
+    background: conic-gradient(var(--gold) calc(var(--pct) * 1%), #e0e7ff 0%);
+    display: flex; align-items: center; justify-content: center; margin: 24px auto; position: relative;
+  }
+  .score-ring::before { content: ''; width: 104px; height: 104px; background: white; border-radius: 50%; position: absolute; }
+  .score-ring span { position: relative; font-size: 1.7rem; font-weight: 700; color: var(--navy); z-index: 1; }
+  .review-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 24px 0 32px; }
+  .review-dot { border-radius: 8px; padding: 8px 4px; font-size: 0.8rem; font-weight: 700; color: white; }
+  .review-dot.ok { background: var(--correct); }
+  .review-dot.fail { background: var(--wrong); }
+  .btn-restart {
+    background: var(--gold); color: var(--navy-dark); border: none; border-radius: 8px;
+    padding: 12px 36px; font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: background 0.2s, transform 0.15s; letter-spacing: 0.4px;
+  }
+  .btn-restart:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+  @media (max-width: 540px) {
+    .question-card { padding: 20px 18px; }
+    .header h1 { font-size: 1.45rem; }
+    .pca-table { font-size: 0.7rem; }
+    .pca-table th, .pca-table td { padding: 4px 5px; }
+  }
+</style>
+</head>
+<body>
+<div class="quiz-shell">
+
+  <div class="header">
+    <div class="tag">Money, Credit &amp; Banking · Lecture 7</div>
+    <h1>Banking Regulation, Financial Innovation<br>&amp; the Basel Framework</h1>
+    <p class="subtitle">9 scenario-based questions</p>
+  </div>
+
+  <div class="progress-label">
+    <span id="prog-text">Question 1 of 9</span>
+    <span id="score-text">Score: 0</span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar"></div>
+  </div>
+
+  <!-- Q1 · correct = C -->
+  <div class="question-card active" id="q1">
+    <div class="q-header"><span class="q-number">Q1</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> In October 2023, a mid-size regional bank faces severe liquidity pressures after social-media rumours trigger rapid deposit withdrawals. The bank holds a portfolio of long-dated government bonds currently worth <em>less</em> than their book value due to rising interest rates, but its loan book is fundamentally sound and credit losses are minimal. The central bank's emergency lending facility is considering whether to provide support.
+    </div>
+    <p class="q-text">Which principle <em>best</em> justifies central bank intervention here, and what condition should the central bank insist upon?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(1,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">No intervention is justified because the bank's unrealised bond losses mean it is technically insolvent and does not qualify for lender-of-last-resort support.</span>
+      </button>
+      <button class="option-btn" onclick="answer(1,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">The FDIC payoff method is the appropriate tool — the central bank should pay depositors directly up to the insured limit and let the bank fail.</span>
+      </button>
+      <button class="option-btn" onclick="answer(1,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">The central bank should lend freely at a penalty rate against good collateral to an illiquid but solvent bank, to prevent a panic from spreading to healthy institutions.</span>
+      </button>
+      <button class="option-btn" onclick="answer(1,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">The central bank should intervene only if the bank is fully solvent on a mark-to-market basis, providing funds at the prevailing market rate.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp1">
+      <div class="explanation-header" id="exp1-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: C</strong><br><br>
+        The classic distinction in banking regulation is between <em>illiquidity</em> and <em>insolvency</em>. This bank suffers from illiquidity — bond prices fell due to rate rises, not credit default — while its loan book remains sound. The lender-of-last-resort doctrine prescribes lending freely at a <em>penalty rate</em> against good collateral to such institutions. The penalty rate discourages moral hazard (banks shouldn't treat emergency facilities as cheap financing), and "good collateral" protects the central bank if the bank ultimately fails.<br><br>
+        Option A conflates unrealised losses with insolvency — mark-to-market solvency is not the test. Option B confuses the FDIC's resolution role with the central bank's emergency liquidity function. Option D is wrong for the same reason as A, and setting rates at market levels defeats the purpose of emergency support.
+        <div class="key-concept">📌 <strong>Key concept:</strong> The GFC 2008 saw the Fed deploy facilities (TAF, TSLF, PDCF) lending over $1 trillion at peak — all consistent with this framework. SVB (2023) is a modern parallel of a bank destroyed by an illiquidity spiral despite a fundamentally sound loan book.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next1" onclick="nextQ(1)">Next Question →</button></div>
+  </div>
+
+  <!-- Q2 · correct = D -->
+  <div class="question-card" id="q2">
+    <div class="q-header"><span class="q-number">Q2</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> Horizon Community Bank (assets: $3.2B) has just been declared insolvent. Two resolution options are on the table: <em>(i)</em> the FDIC directly pays all insured depositors up to $250,000 and liquidates assets; <em>(ii)</em> a larger regional bank, Apex Bank, agrees to assume all deposits — insured <em>and</em> uninsured — and takes over the branch network and loan book. The FDIC calculates that option (ii) costs it an additional $40M versus option (i).
+    </div>
+    <p class="q-text">Why might the FDIC nonetheless prefer the Purchase &amp; Assumption (P&amp;A) method despite the higher direct cost?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(2,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">The P&amp;A method always costs less than the payoff method — the question's premise is incorrect.</span>
+      </button>
+      <button class="option-btn" onclick="answer(2,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">P&amp;A is preferred because it prevents Apex Bank from gaining a competitive advantage through the branch acquisition.</span>
+      </button>
+      <button class="option-btn" onclick="answer(2,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">The P&amp;A method protects only insured depositors, so it reduces moral hazard by making uninsured creditors bear losses.</span>
+      </button>
+      <button class="option-btn" onclick="answer(2,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">The P&amp;A method eliminates the contagion risk of a disorderly bank run spreading to other solvent institutions, whose systemic cost could far exceed the $40M difference.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp2">
+      <div class="explanation-header" id="exp2-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: D — Contagion prevention.</strong><br><br>
+        The FDIC's primary mandate is not cost minimisation but financial stability. A payoff method — even if cheaper in isolation — can trigger a bank panic if uninsured depositors at <em>other</em> banks become fearful. The P&amp;A method short-circuits this: deposits transfer seamlessly to Apex Bank and customers experience no disruption. The systemic cost of a spreading panic would dwarf the $40M difference.<br><br>
+        Option A is wrong — P&amp;A is typically <em>more</em> costly for the FDIC, as stated in the scenario. Option B has no regulatory basis. Option C is wrong — P&amp;A here protects <em>all</em> depositors including uninsured ones, which actually <em>increases</em> moral hazard rather than reducing it.
+        <div class="key-concept">📌 <strong>Key concept:</strong> This is why TBTF institutions almost always receive P&amp;A treatment — their failure would create contagion effects that make direct cost comparisons irrelevant.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next2" onclick="nextQ(2)">Next Question →</button></div>
+  </div>
+
+  <!-- Q3 · correct = A -->
+  <div class="question-card" id="q3">
+    <div class="q-header"><span class="q-number">Q3</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> A government expands deposit insurance from $100,000 to $250,000 per depositor. Over the next five years, analysts observe: (i) depositor withdrawals from high-risk banks decline sharply; (ii) several newly chartered banks rapidly accumulate risky, high-yield loan portfolios; (iii) traditional banks complain about unfair competition from these aggressive new entrants. A World Bank study finds the country experiences an <strong>increase</strong> in banking crises in the decade following the expansion.
+    </div>
+    <p class="q-text">Which combination of regulatory problems <em>best</em> explains observations (i), (ii), and (iii) respectively?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(3,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">Moral hazard (depositor side); adverse selection (ownership side); moral hazard (institutional side).</span>
+      </button>
+      <button class="option-btn" onclick="answer(3,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">Contagion effect; regulatory arbitrage; economies of scale.</span>
+      </button>
+      <button class="option-btn" onclick="answer(3,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">Adverse selection (depositor side); moral hazard (institutional side); contagion effect.</span>
+      </button>
+      <button class="option-btn" onclick="answer(3,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">Moral hazard (institutional side); adverse selection (depositor side); economies of scale.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp3">
+      <div class="explanation-header" id="exp3-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: A</strong><br><br>
+        Each observation maps to a distinct information problem:<br><br>
+        <strong>(i) Depositor withdrawals decline from risky banks → Moral hazard (depositor side).</strong> Insured depositors have no incentive to monitor risky banks — their funds are guaranteed regardless. Market discipline collapses.<br><br>
+        <strong>(ii) New banks accumulate risky portfolios → Adverse selection (ownership side).</strong> Deposit insurance subsidises risk-taking, making banking attractive to those who <em>intend</em> to take on excessive risk. Risk-lovers self-select into banking precisely because the downside is socialised.<br><br>
+        <strong>(iii) Traditional banks face unfair competition → Moral hazard (institutional side).</strong> New entrants can offer higher rates and take riskier positions because losses are insured, forcing conservative banks to compete on unequal footing or match the risk levels.
+        <div class="key-concept">📌 <strong>Key concept:</strong> Demirgüç-Kunt &amp; Detragiache (World Bank) found explicit deposit insurance is statistically linked to <em>higher</em> incidence of banking crises — because these combined effects erode market discipline entirely.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next3" onclick="nextQ(3)">Next Question →</button></div>
+  </div>
+
+  <!-- Q4 · correct = B — CALCULATION + PCA TABLE -->
+  <div class="question-card" id="q4">
+    <div class="q-header"><span class="q-number">Q4</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> Sterling National Bank reports the following:<br>
+      &bull; Tier 1 Capital: <strong>$9.6 billion</strong>&nbsp;&nbsp;&bull; On-balance-sheet assets: <strong>$210 billion</strong>&nbsp;&nbsp;&bull; Off-balance-sheet exposures (converted): <strong>$30 billion</strong><br><br>
+      The Supplementary Leverage Ratio (SLR) = Tier 1 Capital ÷ (on-BS assets + off-BS conversions).<br><br>
+      <strong>FDICIA Prompt Corrective Action (PCA) — Capital Zone Reference:</strong>
+      <table class="pca-table">
+        <thead>
+          <tr><th>Zone</th><th>Total Cap/RWA</th><th>CET1/RWA</th><th>Leverage Ratio</th><th>Key Restriction</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="zone">Well Capitalised</td><td>≥ 10%</td><td>≥ 6.5%</td><td>≥ 5%</td><td>No restrictions</td></tr>
+          <tr><td class="zone">Adequately Capitalised</td><td>≥ 8%</td><td>≥ 4.5%</td><td>≥ 4%</td><td>No brokered deposits without waiver</td></tr>
+          <tr><td class="zone">Undercapitalised</td><td>&lt; 8%</td><td>&lt; 4.5%</td><td>&lt; 4%</td><td>Capital plan required; growth restricted; no brokered deposits</td></tr>
+          <tr><td class="zone">Significantly Under</td><td>&lt; 6%</td><td>&lt; 3%</td><td>&lt; 3%</td><td>Mandatory controls on compensation &amp; dividends</td></tr>
+          <tr><td class="zone">Critically Under</td><td>&lt; 2%</td><td>—</td><td>&lt; 2%</td><td>Receivership within 90 days unless waived</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="q-text">Calculate Sterling National Bank's SLR and identify its PCA capitalisation zone and regulatory implication.</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(4,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">SLR = 5.33% → Well Capitalised. The bank faces no additional regulatory restrictions on this measure.</span>
+      </button>
+      <button class="option-btn" onclick="answer(4,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">SLR = 4.0% → Adequately Capitalised (at the boundary). The bank cannot accept brokered deposits without a waiver and has virtually no cushion before dropping into the Undercapitalised zone.</span>
+      </button>
+      <button class="option-btn" onclick="answer(4,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">SLR = 3.20% → Significantly Undercapitalised. The bank faces mandatory controls on compensation and dividends.</span>
+      </button>
+      <button class="option-btn" onclick="answer(4,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">SLR = 4.0% → Undercapitalised. The bank must submit a capital restoration plan and faces asset growth restrictions.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp4">
+      <div class="explanation-header" id="exp4-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: B</strong><br><br>
+        <strong>Step 1 — Total Leverage Exposure:</strong> $210B + $30B = <strong>$240 billion</strong><br>
+        <strong>Step 2 — SLR:</strong> $9.6B ÷ $240B = <strong>4.0%</strong><br>
+        <strong>Step 3 — PCA Zone:</strong> The Adequately Capitalised threshold for leverage ratio is ≥ 4%. At exactly 4.0%, Sterling sits right at the boundary — not yet Undercapitalised (which requires &lt; 4%), but it cannot accept brokered deposits without a waiver, and a single adverse shock pushes it below the line into mandatory capital plan territory.<br><br>
+        Option D is a common error: 4.0% is the <em>threshold</em> for Adequately Capitalised, not below it — so Undercapitalised is incorrect. Option A's SLR of 5.33% would require Total Leverage Exposure of ~$180B, which is wrong. Option C's SLR of 3.20% would require Tier 1 of ~$7.7B, also wrong.
+        <div class="key-concept">📌 <strong>Key concept:</strong> The SLR is a non-risk-sensitive backstop applied to <em>all</em> assets equally. Basel III introduced it to prevent banks from gaming RWA calculations by loading up on nominally "low-risk" assets. Being exactly at the 4.0% boundary warrants serious supervisory attention.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next4" onclick="nextQ(4)">Next Question →</button></div>
+  </div>
+
+  <!-- Q5 · correct = C — RWA CALCULATION -->
+  <div class="question-card" id="q5">
+    <div class="q-header"><span class="q-number">Q5</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> Albion Bank holds the following portfolio (Basel III Standardised Approach):<br>
+      &bull; U.S. Treasury bonds: <strong>$400M</strong> (0% risk weight)<br>
+      &bull; Residential mortgages, LTV &lt; 80%: <strong>$600M</strong> (50% risk weight)<br>
+      &bull; Unrated corporate loans: <strong>$200M</strong> (100% risk weight)<br>
+      &bull; Speculative-grade loans: <strong>$100M</strong> (150% risk weight)<br><br>
+      Albion holds <strong>$38M</strong> in CET1 capital. Minimum CET1 ratio = 4.5%.
+    </div>
+    <p class="q-text">What are Albion Bank's total Risk-Weighted Assets (RWA), and does the bank meet the minimum CET1 requirement?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(5,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">RWA = $1,300M; CET1 ratio = 2.92% → Does <em>not</em> meet the 4.5% minimum.</span>
+      </button>
+      <button class="option-btn" onclick="answer(5,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">RWA = $550M; CET1 ratio = 6.91% → Meets the 4.5% minimum.</span>
+      </button>
+      <button class="option-btn" onclick="answer(5,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">RWA = $650M; CET1 ratio = 5.85% → Meets the 4.5% minimum.</span>
+      </button>
+      <button class="option-btn" onclick="answer(5,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">RWA = $750M; CET1 ratio = 5.07% → Meets the 4.5% minimum.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp5">
+      <div class="explanation-header" id="exp5-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: C</strong><br><br>
+        <strong>RWA = asset × risk weight, summed across all classes:</strong><br>
+        &bull; Treasuries: $400M × 0% = <strong>$0M</strong><br>
+        &bull; Mortgages: $600M × 50% = <strong>$300M</strong><br>
+        &bull; Corporate loans: $200M × 100% = <strong>$200M</strong><br>
+        &bull; Speculative: $100M × 150% = <strong>$150M</strong><br>
+        <strong>Total RWA = $650M</strong><br><br>
+        <strong>CET1 Ratio = $38M ÷ $650M = 5.85%</strong> — meets the 4.5% minimum.<br><br>
+        However, 5.85% falls below the 7.0% threshold (4.5% minimum + 2.5% conservation buffer), so Albion still faces restrictions on dividend and bonus distributions. Option A incorrectly applies risk weights to the full balance sheet. Option B omits speculative loans. Option D applies 100% risk weight to mortgages rather than 50%.
+        <div class="key-concept">📌 <strong>Key concept:</strong> U.S. Treasuries carry a 0% risk weight — Albion's entire $400M Treasury position contributes <em>nothing</em> to RWA. This treatment effectively subsidises government borrowing and explains why banks accumulate large sovereign portfolios even at low yields.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next5" onclick="nextQ(5)">Next Question →</button></div>
+  </div>
+
+  <!-- Q6 · correct = A — PCA CLASSIFICATION + TABLE -->
+  <div class="question-card" id="q6">
+    <div class="q-header"><span class="q-number">Q6</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> Prometheus Bank (assets: $85B) reports after an unexpected loss:<br>
+      &bull; Total Capital / RWA: <strong>7.2%</strong>&nbsp;&nbsp;&bull; CET1 / RWA: <strong>4.1%</strong>&nbsp;&nbsp;&bull; Leverage Ratio: <strong>3.8%</strong><br><br>
+      The board is debating: accept new brokered deposits, raise external equity, or suspend dividends.<br><br>
+      <strong>FDICIA Prompt Corrective Action (PCA) — Capital Zone Reference:</strong>
+      <table class="pca-table">
+        <thead>
+          <tr><th>Zone</th><th>Total Cap/RWA</th><th>CET1/RWA</th><th>Leverage Ratio</th><th>Key Restriction</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="zone">Well Capitalised</td><td>≥ 10%</td><td>≥ 6.5%</td><td>≥ 5%</td><td>No restrictions</td></tr>
+          <tr><td class="zone">Adequately Capitalised</td><td>≥ 8%</td><td>≥ 4.5%</td><td>≥ 4%</td><td>No brokered deposits without waiver</td></tr>
+          <tr><td class="zone">Undercapitalised</td><td>&lt; 8%</td><td>&lt; 4.5%</td><td>&lt; 4%</td><td>Capital plan required; growth restricted; no brokered deposits</td></tr>
+          <tr><td class="zone">Significantly Under</td><td>&lt; 6%</td><td>&lt; 3%</td><td>&lt; 3%</td><td>Mandatory controls on compensation &amp; dividends</td></tr>
+          <tr><td class="zone">Critically Under</td><td>&lt; 2%</td><td>—</td><td>&lt; 2%</td><td>Receivership within 90 days unless waived</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="q-text">Which capitalisation zone is Prometheus Bank in, and what are its <em>mandatory</em> regulatory constraints?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(6,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">Undercapitalised: the bank must submit a capital restoration plan; growth is restricted; and it is prohibited from accepting brokered deposits entirely.</span>
+      </button>
+      <button class="option-btn" onclick="answer(6,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">Adequately Capitalised: the bank may accept brokered deposits with a regulatory waiver and faces no growth restrictions.</span>
+      </button>
+      <button class="option-btn" onclick="answer(6,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">Well Capitalised: the bank faces no additional restrictions and may proceed with the brokered deposit strategy.</span>
+      </button>
+      <button class="option-btn" onclick="answer(6,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">Significantly Undercapitalised: the bank faces mandatory controls on executive compensation and dividend payments.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp6">
+      <div class="explanation-header" id="exp6-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: A — Undercapitalised</strong><br><br>
+        A bank is classified by its <em>worst</em> ratio. Checking each against the table:<br>
+        &bull; Total Capital/RWA: 7.2% &lt; 8% → <strong>Undercapitalised</strong><br>
+        &bull; CET1/RWA: 4.1% &lt; 4.5% → <strong>Undercapitalised</strong><br>
+        &bull; Leverage Ratio: 3.8% &lt; 4% → <strong>Undercapitalised</strong><br><br>
+        All three ratios breach the Undercapitalised threshold. Mandatory consequences: capital restoration plan, asset growth restrictions, and a complete ban on new brokered deposits. (The waiver option applies only to Adequately Capitalised banks — not Undercapitalised ones.)<br><br>
+        Option D is wrong: Significantly Undercapitalised requires CET1 &lt; 3% and Total Capital &lt; 6% — Prometheus doesn't breach those lower thresholds.
+        <div class="key-concept">📌 <strong>Key concept:</strong> PCA was designed to prevent "regulatory forbearance" — the pre-FDICIA practice of delaying action on weak banks, which deepened the S&amp;L crisis losses by allowing problems to compound unchecked for years.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next6" onclick="nextQ(6)">Next Question →</button></div>
+  </div>
+
+  <!-- Q7 · correct = D — TBTF / G-SIB -->
+  <div class="question-card" id="q7">
+    <div class="q-header"><span class="q-number">Q7</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> In 2028, Atlas Financial — a <strong>G-SIB</strong> (Global Systemically Important Bank: a designation assigned by the Financial Stability Board to institutions whose failure could destabilise the global financial system; current examples include JPMorgan, Citigroup, HSBC, and BNP Paribas) — is approaching insolvency following catastrophic derivatives losses. Its assets total $2.8 trillion.<br><br>
+      The U.S. Treasury Secretary convenes an emergency meeting. One official argues: <em>"Dodd-Frank's Orderly Liquidation Authority (OLA) gives us the tools — we should not bail out Atlas."</em> Another argues: <em>"Markets have priced in an implicit government guarantee for years. A disorderly failure will trigger a systemic crisis worse than 2008."</em>
+    </div>
+    <p class="q-text">Which statement <em>most accurately</em> characterises the "Too Big to Fail" problem as it applies to this scenario?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(7,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">TBTF is no longer a concern post-Dodd-Frank because OLA provides a clear, legally credible resolution path that eliminates the need for taxpayer bailouts.</span>
+      </button>
+      <button class="option-btn" onclick="answer(7,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">The TBTF problem only applies if Atlas's assets exceed $700 billion, which was the original threshold before the Basel III Endgame expansion.</span>
+      </button>
+      <button class="option-btn" onclick="answer(7,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">The correct solution is to immediately convert Atlas into a deposit-funded institution under FDIC supervision, eliminating systemic risk by restricting it to traditional banking activities.</span>
+      </button>
+      <button class="option-btn" onclick="answer(7,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">The implicit guarantee that markets have already priced in means that allowing Atlas to fail — even via OLA — would destroy market credibility and likely trigger a systemic panic as creditors reprice all other G-SIBs simultaneously.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp7">
+      <div class="explanation-header" id="exp7-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: D</strong><br><br>
+        The TBTF problem is fundamentally about <em>credibility</em> and <em>market expectations</em>. G-SIBs borrow at a discount to peers because markets assume they will be rescued. An abrupt reversal of that implicit guarantee creates its own systemic shock: creditors of <em>other</em> G-SIBs would immediately reprice their exposure, potentially triggering a crisis far broader than the original failure.<br><br>
+        Option A overstates Dodd-Frank — OLA is a legal mechanism, but the market's expectation of rescue is a behavioural reality that law alone cannot extinguish overnight. Option B confuses the $700B threshold (Basel III Endgame applicability) with TBTF, which is about systemic importance, not a hard asset cutoff. Option C is practically impossible and legally incoherent.
+        <div class="key-concept">📌 <strong>Key concept:</strong> This is why TBTF is described as "a moral hazard that worsens the instability regulators sought to prevent" — the implicit guarantee encourages greater risk-taking by G-SIBs, making future crises more likely and more costly.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next7" onclick="nextQ(7)">Next Question →</button></div>
+  </div>
+
+  <!-- Q8 · correct = A — SVB / AOCI with AFS and NPR explained -->
+  <div class="question-card" id="q8">
+    <div class="q-header"><span class="q-number">Q8</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> In early 2023, Silicon Valley Bank (SVB) collapsed rapidly. Post-mortem analysis showed SVB had accumulated a large portfolio of long-duration <strong>AFS securities</strong> (Available-For-Sale securities: bonds and other fixed-income instruments held on the balance sheet that are marked to market each quarter, with unrealised gains and losses recorded in equity) whose market value had fallen sharply as interest rates rose. Because SVB fell below the $700B asset threshold for advanced approaches, it was <em>not</em> required to include these unrealised losses — known as AOCI (Accumulated Other Comprehensive Income) — in its reported CET1 capital. Its CET1 ratio therefore appeared healthy to outside observers.<br><br>
+      Following SVB's collapse, the Fed, OCC, and FDIC jointly published an <strong>NPR</strong> (Notice of Proposed Rulemaking: a formal regulatory document that sets out proposed new rules for public consultation before they become law) on July 27, 2023, proposing to extend AOCI inclusion in CET1 to all banks with $100B+ in assets.
+    </div>
+    <p class="q-text">What fundamental regulatory failure does the SVB case illustrate, and why would mandatory AOCI inclusion have been an effective early-warning mechanism?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(8,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">SVB illustrates how a regulatory threshold exemption allowed a large, interest-rate-sensitive bank to conceal mark-to-market losses in its capital ratios — losses that, if included, would have triggered PCA restrictions or raised supervisory red flags long before the run began.</span>
+      </button>
+      <button class="option-btn" onclick="answer(8,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">SVB illustrates the danger of excessive leverage; AOCI inclusion would have forced the bank to reduce total assets to maintain its leverage ratio.</span>
+      </button>
+      <button class="option-btn" onclick="answer(8,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">SVB illustrates the failure of deposit insurance; had FDIC coverage extended to all deposits, depositors would not have withdrawn and the bank would have survived.</span>
+      </button>
+      <button class="option-btn" onclick="answer(8,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">SVB illustrates the risk of originate-to-distribute securitisation; AOCI inclusion would have penalised off-balance-sheet activity and reduced SVB's exposure.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp8">
+      <div class="explanation-header" id="exp8-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: A</strong><br><br>
+        SVB is a textbook example of a regulatory threshold creating a perverse incentive. Its $15B+ in unrealised AFS losses were invisible to its reported capital ratios. Had AOCI been included, SVB's CET1 ratio would have been dramatically lower — likely triggering PCA scrutiny or restrictions months before the deposit run, giving supervisors time to act before a crisis materialised.<br><br>
+        Option B is incorrect — AOCI is a mark-to-market interest rate risk measure, not a leverage metric; reducing assets would not have addressed the bond portfolio problem. Option C is partly true (deposit insurance played a role in the aftermath) but doesn't address the AOCI regulatory mechanism. Option D confuses SVB's bond duration problem entirely with the GFC-era originate-to-distribute securitisation model.
+        <div class="key-concept">📌 <strong>Key concept:</strong> SVB's March 2023 failure directly validated the NPR's reform agenda. The fact that the NPR was published just four months after SVB's collapse — with AOCI inclusion as a centrepiece — confirms that supervisors viewed the threshold exemption as a critical regulatory gap.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next8" onclick="nextQ(8)">Next Question →</button></div>
+  </div>
+
+  <!-- Q9 · correct = C — MMF / SHADOW BANKING -->
+  <div class="question-card" id="q9">
+    <div class="q-header"><span class="q-number">Q9</span></div>
+    <div class="scenario-box">
+      <strong>Scenario:</strong> In September 2008, Reserve Primary Fund — the oldest U.S. money market mutual fund — "broke the buck" when its NAV fell below $1 per share due to $785M in Lehman Brothers exposure. Within 72 hours, over $310 billion in MMF outflows occurred industry-wide. The U.S. Treasury intervened with an emergency guarantee for all MMF deposits. By 2023, U.S. MMF assets had grown to $4.6 trillion — <em>larger</em> than pre-2008 levels.
+    </div>
+    <p class="q-text">Which argument <em>best</em> explains why the MMF systemic risk is arguably <em>worse</em> today than in 2008, and what structural feature makes MMFs inherently vulnerable to runs?</p>
+    <div class="options">
+      <button class="option-btn" onclick="answer(9,'A')">
+        <span class="opt-label">A</span>
+        <span class="opt-text">MMFs are riskier today because they are now FDIC-insured up to $250,000, creating moral hazard; they were safer in 2008 because market discipline constrained risk-taking.</span>
+      </button>
+      <button class="option-btn" onclick="answer(9,'B')">
+        <span class="opt-label">B</span>
+        <span class="opt-text">Systemic risk is lower today because the 2014 SEC rule requiring institutional prime funds to float their NAV has eliminated the fixed $1 guarantee and removed the run incentive entirely.</span>
+      </button>
+      <button class="option-btn" onclick="answer(9,'C')">
+        <span class="opt-label">C</span>
+        <span class="opt-text">MMFs are structurally vulnerable because they promise a stable $1 NAV while holding assets that can fall in value — creating bank-like run dynamics without deposit insurance protection. With $4.6T AUM and MMFs funding ~35% of commercial paper and ~50% of repo, a modern panic would cause more severe credit market paralysis than in 2008.</span>
+      </button>
+      <button class="option-btn" onclick="answer(9,'D')">
+        <span class="opt-label">D</span>
+        <span class="opt-text">MMFs are less risky today because the 2023 SEC liquidity fee reforms make withdrawals prohibitively expensive for large institutional investors, effectively eliminating run risk.</span>
+      </button>
+    </div>
+    <div class="explanation" id="exp9">
+      <div class="explanation-header" id="exp9-header"></div>
+      <div class="explanation-body">
+        <strong>Correct answer: C</strong><br><br>
+        MMFs' structural fragility stems from a fundamental mismatch: they promise capital stability (the $1 NAV) while investing in assets whose values can fluctuate. This creates a <em>first-mover advantage</em> run incentive — the first to redeem gets par value, incentivising all investors to run simultaneously at the first hint of trouble — exactly what happened in 2008.<br><br>
+        The systemic concern is larger today because: (1) MMF assets are now $4.6T; (2) the 2008 Treasury emergency guarantee created an implicit backstop, adding moral hazard; (3) MMFs are deeply embedded in short-term funding — their withdrawal freezes commercial paper and repo markets.<br><br>
+        Option A is wrong — MMFs are <em>not</em> FDIC-insured. Option B overstates the 2014 reform: it applied only to institutional prime funds; government and retail MMFs retained the fixed $1 NAV. Option D also overstates the 2023 reforms — fees reduce runs at the margin but don't eliminate the structural incentive, as the 2020 Covid stress episode confirmed.
+        <div class="key-concept">📌 <strong>Key concept:</strong> Shadow banking — of which MMFs are a major component — lies largely outside the Basel framework. The 2008 emergency guarantee means MMFs now carry an implicit government backstop without the formal regulatory obligations that accompany deposit insurance.</div>
+      </div>
+    </div>
+    <div class="nav-row"><button class="btn-next" id="next9" onclick="showResults()">View Results →</button></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-card" id="results">
+    <h2>Quiz Complete</h2>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:4px;">Lecture 7 — Banking Regulation &amp; the Basel Framework</p>
+    <div class="score-ring" id="score-ring"><span id="final-score">0/9</span></div>
+    <div class="review-grid" id="review-grid"></div>
+    <button class="btn-restart" onclick="restart()">↺ Restart Quiz</button>
+  </div>
+
+</div>
+<script>
+const TOTAL = 9;
+const CORRECT = {1:'C',2:'D',3:'A',4:'B',5:'C',6:'A',7:'D',8:'A',9:'C'};
+let scores = {}, current = 1;
+
+function answer(q, choice) {
+  if (scores[q] !== undefined) return;
+  scores[q] = (choice === CORRECT[q]);
+  const card = document.getElementById('q'+q);
+  ['A','B','C','D'].forEach((opt, i) => {
+    const btn = card.querySelectorAll('.option-btn')[i];
+    btn.disabled = true;
+    if (opt === CORRECT[q]) btn.classList.add('correct');
+    else if (opt === choice) btn.classList.add('wrong');
+  });
+  const exp = document.getElementById('exp'+q);
+  const hdr = document.getElementById('exp'+q+'-header');
+  exp.classList.add('show', scores[q] ? 'correct-exp' : 'wrong-exp');
+  hdr.textContent = scores[q] ? '✓ Correct' : '✗ Incorrect — See explanation below';
+  document.getElementById('next'+q).classList.add('visible');
+  updateProgress();
+}
+
+function nextQ(q) {
+  document.getElementById('q'+q).classList.remove('active');
+  current = q + 1;
+  document.getElementById('q'+current).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = Object.keys(scores).length;
+  const correct  = Object.values(scores).filter(Boolean).length;
+  document.getElementById('progress-bar').style.width = ((current-1)/TOTAL*100)+'%';
+  document.getElementById('prog-text').textContent  = 'Question '+current+' of '+TOTAL;
+  document.getElementById('score-text').textContent = 'Score: '+correct+'/'+answered;
+}
+
+function showResults() {
+  document.getElementById('q'+TOTAL).classList.remove('active');
+  document.getElementById('results').classList.add('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  const correct = Object.values(scores).filter(Boolean).length;
+  document.getElementById('final-score').textContent = correct+'/'+TOTAL;
+  document.getElementById('score-ring').style.setProperty('--pct', (correct/TOTAL)*100);
+
+  const grid = document.getElementById('review-grid');
+  grid.innerHTML = '';
+  for (let i=1; i<=TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'review-dot '+(scores[i] ? 'ok' : 'fail');
+    d.textContent = 'Q'+i+': '+(scores[i] ? '✓' : '✗');
+    grid.appendChild(d);
+  }
+
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('prog-text').textContent  = 'Completed';
+  document.getElementById('score-text').textContent = 'Final Score: '+correct+'/'+TOTAL;
+}
+
+function restart() {
+  scores = {}; current = 1;
+  for (let i=1; i<=TOTAL; i++) {
+    const card = document.getElementById('q'+i);
+    card.classList.remove('active');
+    card.querySelectorAll('.option-btn').forEach(b => { b.disabled=false; b.classList.remove('correct','wrong'); });
+    document.getElementById('exp'+i).classList.remove('show','correct-exp','wrong-exp');
+    document.getElementById('next'+i).classList.remove('visible');
+  }
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('q1').classList.add('active');
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('prog-text').textContent  = 'Question 1 of '+TOTAL;
+  document.getElementById('score-text').textContent = 'Score: 0';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
